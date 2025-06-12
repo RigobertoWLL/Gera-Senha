@@ -48,7 +48,7 @@
         </div>
 
         <!-- ID do Usuário (apenas para usuários logados) -->
-        <p id="user-id-display" class="hidden text-center text-sm text-zinc-500 mb-6">
+        <p id="user-id-display-wrapper" class="hidden text-center text-sm text-zinc-500 mb-6">
             ID do Usuário Atual: <span class="font-mono break-all text-zinc-400"></span>
         </p>
 
@@ -251,33 +251,13 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Referências aos elementos da UI
-        const loginScreen = document.getElementById('login-screen');
-        const registrationScreen = document.getElementById('registration-screen');
-        const dashboardScreen = document.getElementById('dashboard-screen');
-        const userIdDisplay = document.querySelector('#user-id-display span');
-        const messageContainer = document.getElementById('message-container');
-        const errorContainer = document.getElementById('error-container');
-
-        const loginForm = document.getElementById('login-form');
-        const loginUsernameInput = document.getElementById('login-username');
-        const loginPasswordInput = document.getElementById('login-password');
-        const showRegisterButton = document.getElementById('show-register-button');
-
-        const registerForm = document.getElementById('register-form');
-        const registerUsernameInput = document.getElementById('register-username');
-        const registerPasswordInput = document.getElementById('register-password');
-        const registrationCodeInput = document.getElementById('registration-code');
-        const backToLoginButton = document.getElementById('back-to-login-button');
-
-        const generatedPasswordDisplay = document.getElementById('generated-password-display');
-        const generatePasswordButton = document.getElementById('generate-password-button');
-        const savePasswordForm = document.getElementById('save-password-form');
-        const loginWebsiteInput = document.getElementById('login-website-input');
-        const passwordToSaveInput = document.getElementById('password-to-save-input');
-        const savedPasswordsList = document.getElementById('saved-passwords-list');
-        const noPasswordsMessage = document.getElementById('no-passwords-message');
-        const logoutButton = document.getElementById('logout-button');
+        // Declarar referências a elementos UI fora do DOMContentLoaded
+        // para que possam ser acessadas globalmente, mas inicializá-las DENTRO
+        let loginScreen, registrationScreen, dashboardScreen, userIdDisplayWrapper, userIdDisplay;
+        let messageContainer, errorContainer;
+        let loginForm, loginUsernameInput, loginPasswordInput, showRegisterButton;
+        let registerForm, registerUsernameInput, registerPasswordInput, registrationCodeInput, backToLoginButton;
+        let generatedPasswordDisplay, generatePasswordButton, savePasswordForm, loginWebsiteInput, passwordToSaveInput, savedPasswordsList, noPasswordsMessage, logoutButton;
 
         let currentUser = null; // Para armazenar o usuário logado
 
@@ -313,108 +293,6 @@
             errorContainer.textContent = '';
         }
 
-        // --- Funções de Autenticação ---
-        onAuthStateChanged(auth, async (user) => {
-            if (initialAuthToken && !user) {
-                try {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    console.log("Usuário autenticado com token personalizado.");
-                } catch (error) {
-                    console.error("Erro ao autenticar com token personalizado:", error);
-                    await signInAnonymously(auth);
-                    console.log("Usuário autenticado anonimamente.");
-                }
-            } else if (!user) {
-                await signInAnonymously(auth);
-                console.log("Usuário autenticado anonimamente.");
-            }
-
-            currentUser = user; // Atualiza o usuário globalmente
-            if (currentUser) {
-                userIdDisplay.textContent = currentUser.uid || 'N/A';
-                document.getElementById('user-id-display').classList.remove('hidden');
-                showScreen('dashboard-screen');
-                setupFirestoreListener(); // Inicia listener do Firestore após o login
-            } else {
-                document.getElementById('user-id-display').classList.add('hidden');
-                showScreen('login-screen');
-            }
-        });
-
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-            hideMessage();
-            const username = loginUsernameInput.value;
-            const password = loginPasswordInput.value;
-            const firebaseEmail = `${username}@passmanager.com`; // Formato de e-mail para Firebase Auth
-
-            try {
-                await signInWithEmailAndPassword(auth, firebaseEmail, password);
-                displayMessage("Login realizado com sucesso!");
-                loginUsernameInput.value = ''; // Limpa campos
-                loginPasswordInput.value = '';
-            } catch (error) {
-                console.error("Erro ao fazer login:", error.message);
-                displayError("Falha na autenticação: Credenciais incorretas.");
-            }
-        });
-
-        showRegisterButton.addEventListener('click', () => {
-            showScreen('registration-screen');
-            loginUsernameInput.value = ''; // Limpa campos de login ao ir para o registro
-            loginPasswordInput.value = '';
-        });
-
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-            hideMessage();
-            const username = registerUsernameInput.value;
-            const password = registerPasswordInput.value;
-            const registrationCode = registrationCodeInput.value;
-
-            if (registrationCode !== MASTER_REGISTRATION_CODE) {
-                displayError("Código de registro inválido.");
-                return;
-            }
-
-            const firebaseEmail = `${username}@passmanager.com`; // Formato de e-mail para Firebase Auth
-
-            try {
-                await createUserWithEmailAndPassword(auth, firebaseEmail, password);
-                displayMessage("Conta criada com sucesso! Você está logado.");
-                registerUsernameInput.value = ''; // Limpa campos
-                registerPasswordInput.value = '';
-                registrationCodeInput.value = '';
-                showScreen('login-screen'); // Volta para login após registro
-            } catch (error) {
-                console.error("Erro ao criar conta:", error.message);
-                displayError("Erro ao criar conta: " + error.message);
-            }
-        });
-
-        backToLoginButton.addEventListener('click', () => {
-            showScreen('login-screen');
-            registerUsernameInput.value = ''; // Limpa campos de registro ao voltar
-            registerPasswordInput.value = '';
-            registrationCodeInput.value = '';
-        });
-
-        logoutButton.addEventListener('click', async () => {
-            hideError();
-            hideMessage();
-            try {
-                await signOut(auth);
-                displayMessage("Logout realizado.");
-            } catch (error) {
-                console.error("Erro ao fazer logout:", error.message);
-                displayError("Erro ao sair. Tente novamente.");
-            }
-        });
-
-        // --- Funções do Gerenciador de Senhas ---
-
         // Função para gerar uma senha segura (a mesma lógica do React)
         const generatePassword = (length = 20) => {
             const characters =
@@ -430,62 +308,6 @@
             return password;
         };
 
-        generatePasswordButton.addEventListener('click', () => {
-            const newPassword = generatePassword();
-            generatedPasswordDisplay.value = newPassword;
-            passwordToSaveInput.value = newPassword; // Preenche o campo de salvar automaticamente
-            displayMessage("Senha gerada!");
-        });
-
-        savePasswordForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-            hideMessage();
-            const loginWebsite = loginWebsiteInput.value;
-            const password = passwordToSaveInput.value;
-
-            if (!currentUser) {
-                displayError("Usuário não autenticado. Por favor, faça login.");
-                return;
-            }
-            if (!loginWebsite || !password) {
-                displayError("Por favor, preencha o login/site e a senha.");
-                return;
-            }
-
-            try {
-                await addDoc(collection(db, `artifacts/${appId}/public/data/sharedPasswords`), {
-                    loginWebsite: loginWebsite,
-                    password: password,
-                    createdAt: new Date(),
-                    savedBy: currentUser.uid,
-                });
-                displayMessage("Senha salva com sucesso!");
-                loginWebsiteInput.value = '';
-                passwordToSaveInput.value = '';
-                generatedPasswordDisplay.value = ''; // Limpa o display da senha gerada
-            } catch (error) {
-                console.error("Erro ao salvar senha:", error);
-                displayError("Erro ao salvar senha. Tente novamente.");
-            }
-        });
-
-        async function handleDeletePassword(id) {
-            hideError();
-            hideMessage();
-            if (!currentUser) {
-                displayError("Usuário não autenticado.");
-                return;
-            }
-            try {
-                await deleteDoc(doc(db, `artifacts/${appId}/public/data/sharedPasswords`, id));
-                displayMessage("Senha deletada com sucesso!");
-            } catch (error) {
-                console.error("Erro ao deletar senha:", error);
-                displayError("Erro ao deletar senha. Tente novamente.");
-            }
-        }
-
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
                 displayMessage('Senha copiada para a área de transferência!');
@@ -495,64 +317,254 @@
             });
         }
 
-        // Listener do Firestore para exibir senhas
-        function setupFirestoreListener() {
-            if (!currentUser) return; // Garante que há um usuário logado
+        // --- Lógica Principal (executada após o DOM carregar) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar referências a elementos UI AQUI
+            loginScreen = document.getElementById('login-screen');
+            registrationScreen = document.getElementById('registration-screen');
+            dashboardScreen = document.getElementById('dashboard-screen');
+            userIdDisplayWrapper = document.getElementById('user-id-display-wrapper');
+            userIdDisplay = userIdDisplayWrapper.querySelector('span'); // Selecionar o span DENTRO do wrapper
+            messageContainer = document.getElementById('message-container');
+            errorContainer = document.getElementById('error-container');
 
-            const passwordsCollectionRef = collection(db, `artifacts/${appId}/public/data/sharedPasswords`);
-            const q = query(passwordsCollectionRef);
+            loginForm = document.getElementById('login-form');
+            loginUsernameInput = document.getElementById('login-username');
+            loginPasswordInput = document.getElementById('login-password');
+            showRegisterButton = document.getElementById('show-register-button');
 
-            onSnapshot(q, (snapshot) => {
-                savedPasswordsList.innerHTML = ''; // Limpa a lista antes de renderizar
-                const passwordsData = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
+            registerForm = document.getElementById('register-form');
+            registerUsernameInput = document.getElementById('register-username');
+            registerPasswordInput = document.getElementById('register-password');
+            registrationCodeInput = document.getElementById('registration-code');
+            backToLoginButton = document.getElementById('back-to-login-button');
 
-                if (passwordsData.length === 0) {
-                    noPasswordsMessage.classList.remove('hidden');
-                } else {
-                    noPasswordsMessage.classList.add('hidden');
-                    passwordsData.forEach(item => {
-                        const passwordCard = document.createElement('div');
-                        passwordCard.className = 'bg-zinc-800 p-5 rounded-lg border border-zinc-700 flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-200';
-                        passwordCard.innerHTML = `
-                            <div>
-                                <p class="text-zinc-400 text-sm mb-1">Login/Site:</p>
-                                <p class="text-xl font-semibold text-zinc-100 break-all mb-3">${item.loginWebsite}</p>
-                                <p class="text-zinc-400 text-sm mb-1">Senha:</p>
-                                <p class="text-2xl font-mono text-green-300 break-all mb-4">${item.password}</p>
-                                ${item.savedBy ? `<p class="text-zinc-500 text-xs italic mt-2">Salva por: <span class="font-mono break-all">${item.savedBy}</span></p>` : ''}
-                            </div>
-                            <div class="flex justify-end gap-3 mt-4">
-                                <button data-id="${item.id}" data-password="${item.password}" class="copy-button bg-cyan-700 hover:bg-cyan-800 text-zinc-100 px-4 py-2 rounded-lg text-sm font-medium transition duration-300 transform hover:scale-105 border border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2 focus:ring-offset-zinc-800">
-                                    Copiar
-                                </button>
-                                <button data-id="${item.id}" class="delete-button bg-red-700 hover:bg-red-800 text-zinc-100 px-4 py-2 rounded-lg text-sm font-medium transition duration-300 transform hover:scale-105 border border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-zinc-800">
-                                    Deletar
-                                </button>
-                            </div>
-                        `;
-                        savedPasswordsList.appendChild(passwordCard);
-                    });
+            generatedPasswordDisplay = document.getElementById('generated-password-display');
+            generatePasswordButton = document.getElementById('generate-password-button');
+            savePasswordForm = document.getElementById('save-password-form');
+            loginWebsiteInput = document.getElementById('login-website-input');
+            passwordToSaveInput = document.getElementById('password-to-save-input');
+            savedPasswordsList = document.getElementById('saved-passwords-list');
+            noPasswordsMessage = document.getElementById('no-passwords-message');
+            logoutButton = document.getElementById('logout-button');
 
-                    // Adicionar listeners aos botões de copiar e deletar recém-criados
-                    document.querySelectorAll('.copy-button').forEach(button => {
-                        button.addEventListener('click', (e) => {
-                            copyToClipboard(e.target.dataset.password);
-                        });
-                    });
-                    document.querySelectorAll('.delete-button').forEach(button => {
-                        button.addEventListener('click', (e) => {
-                            handleDeletePassword(e.target.dataset.id);
-                        });
-                    });
+            // --- Funções de Autenticação ---
+            onAuthStateChanged(auth, async (user) => {
+                if (initialAuthToken && !user) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Usuário autenticado com token personalizado.");
+                    } catch (error) {
+                        console.error("Erro ao autenticar com token personalizado:", error);
+                        await signInAnonymously(auth);
+                        console.log("Usuário autenticado anonimamente.");
+                    }
+                } else if (!user) {
+                    await signInAnonymously(auth);
+                    console.log("Usuário autenticado anonimamente.");
                 }
-            }, (error) => {
-                console.error("Erro ao buscar senhas:", error);
-                displayError("Erro ao carregar senhas. Tente novamente.");
+
+                currentUser = user; // Atualiza o usuário globalmente
+                if (currentUser) {
+                    userIdDisplay.textContent = currentUser.uid || 'N/A';
+                    userIdDisplayWrapper.classList.remove('hidden'); // Mostra o wrapper
+                    showScreen('dashboard-screen');
+                    setupFirestoreListener(); // Inicia listener do Firestore após o login
+                } else {
+                    userIdDisplayWrapper.classList.add('hidden'); // Oculta o wrapper
+                    showScreen('login-screen');
+                }
             });
-        }
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideError();
+                hideMessage();
+                const username = loginUsernameInput.value;
+                const password = loginPasswordInput.value;
+                const firebaseEmail = `${username}@passmanager.com`; // Formato de e-mail para Firebase Auth
+
+                try {
+                    await signInWithEmailAndPassword(auth, firebaseEmail, password);
+                    displayMessage("Login realizado com sucesso!");
+                    loginUsernameInput.value = ''; // Limpa campos
+                    loginPasswordInput.value = '';
+                } catch (error) {
+                    console.error("Erro ao fazer login:", error.message);
+                    displayError("Falha na autenticação: Credenciais incorretas.");
+                }
+            });
+
+            showRegisterButton.addEventListener('click', () => {
+                showScreen('registration-screen');
+                loginUsernameInput.value = ''; // Limpa campos de login ao ir para o registro
+                loginPasswordInput.value = '';
+            });
+
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideError();
+                hideMessage();
+                const username = registerUsernameInput.value;
+                const password = registerPasswordInput.value;
+                const registrationCode = registrationCodeInput.value;
+
+                if (registrationCode !== MASTER_REGISTRATION_CODE) {
+                    displayError("Código de registro inválido.");
+                    return;
+                }
+
+                const firebaseEmail = `${username}@passmanager.com`; // Formato de e-mail para Firebase Auth
+
+                try {
+                    await createUserWithEmailAndPassword(auth, firebaseEmail, password);
+                    displayMessage("Conta criada com sucesso! Você está logado.");
+                    registerUsernameInput.value = ''; // Limpa campos
+                    registerPasswordInput.value = '';
+                    registrationCodeInput.value = '';
+                    showScreen('login-screen'); // Volta para login após registro
+                } catch (error) {
+                    console.error("Erro ao criar conta:", error.message);
+                    displayError("Erro ao criar conta: " + error.message);
+                }
+            });
+
+            backToLoginButton.addEventListener('click', () => {
+                showScreen('login-screen');
+                registerUsernameInput.value = ''; // Limpa campos de registro ao voltar
+                registerPasswordInput.value = '';
+                registrationCodeInput.value = '';
+            });
+
+            logoutButton.addEventListener('click', async () => {
+                hideError();
+                hideMessage();
+                try {
+                    await signOut(auth);
+                    displayMessage("Logout realizado.");
+                } catch (error) {
+                    console.error("Erro ao fazer logout:", error.message);
+                    displayError("Erro ao sair. Tente novamente.");
+                }
+            });
+
+            // --- Funções do Gerenciador de Senhas ---
+
+            generatePasswordButton.addEventListener('click', () => {
+                const newPassword = generatePassword();
+                generatedPasswordDisplay.value = newPassword;
+                passwordToSaveInput.value = newPassword; // Preenche o campo de salvar automaticamente
+                displayMessage("Senha gerada!");
+            });
+
+            savePasswordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideError();
+                hideMessage();
+                const loginWebsite = loginWebsiteInput.value;
+                const password = passwordToSaveInput.value;
+
+                if (!currentUser) {
+                    displayError("Usuário não autenticado. Por favor, faça login.");
+                    return;
+                }
+                if (!loginWebsite || !password) {
+                    displayError("Por favor, preencha o login/site e a senha.");
+                    return;
+                }
+
+                try {
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/sharedPasswords`), {
+                        loginWebsite: loginWebsite,
+                        password: password,
+                        createdAt: new Date(),
+                        savedBy: currentUser.uid,
+                    });
+                    displayMessage("Senha salva com sucesso!");
+                    loginWebsiteInput.value = '';
+                    passwordToSaveInput.value = '';
+                    generatedPasswordDisplay.value = ''; // Limpa o display da senha gerada
+                } catch (error) {
+                    console.error("Erro ao salvar senha:", error);
+                    displayError("Erro ao salvar senha. Tente novamente.");
+                }
+            });
+
+            async function handleDeletePassword(id) {
+                hideError();
+                hideMessage();
+                if (!currentUser) {
+                    displayError("Usuário não autenticado.");
+                    return;
+                }
+                try {
+                    await deleteDoc(doc(db, `artifacts/${appId}/public/data/sharedPasswords`, id));
+                    displayMessage("Senha deletada com sucesso!");
+                } catch (error) {
+                    console.error("Erro ao deletar senha:", error);
+                    displayError("Erro ao deletar senha. Tente novamente.");
+                }
+            }
+
+            // Listener do Firestore para exibir senhas
+            function setupFirestoreListener() {
+                if (!currentUser) return; // Garante que há um usuário logado
+
+                const passwordsCollectionRef = collection(db, `artifacts/${appId}/public/data/sharedPasswords`);
+                const q = query(passwordsCollectionRef);
+
+                onSnapshot(q, (snapshot) => {
+                    savedPasswordsList.innerHTML = ''; // Limpa a lista antes de renderizar
+                    const passwordsData = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                    }));
+
+                    if (passwordsData.length === 0) {
+                        noPasswordsMessage.classList.remove('hidden');
+                    } else {
+                        noPasswordsMessage.classList.add('hidden');
+                        passwordsData.forEach(item => {
+                            const passwordCard = document.createElement('div');
+                            passwordCard.className = 'bg-zinc-800 p-5 rounded-lg border border-zinc-700 flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-200';
+                            passwordCard.innerHTML = `
+                                <div>
+                                    <p class="text-zinc-400 text-sm mb-1">Login/Site:</p>
+                                    <p class="text-xl font-semibold text-zinc-100 break-all mb-3">${item.loginWebsite}</p>
+                                    <p class="text-zinc-400 text-sm mb-1">Senha:</p>
+                                    <p class="text-2xl font-mono text-green-300 break-all mb-4">${item.password}</p>
+                                    ${item.savedBy ? `<p class="text-zinc-500 text-xs italic mt-2">Salva por: <span class="font-mono break-all">${item.savedBy}</span></p>` : ''}
+                                </div>
+                                <div class="flex justify-end gap-3 mt-4">
+                                    <button data-id="${item.id}" data-password="${item.password}" class="copy-button bg-cyan-700 hover:bg-cyan-800 text-zinc-100 px-4 py-2 rounded-lg text-sm font-medium transition duration-300 transform hover:scale-105 border border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2 focus:ring-offset-zinc-800">
+                                        Copiar
+                                    </button>
+                                    <button data-id="${item.id}" class="delete-button bg-red-700 hover:bg-red-800 text-zinc-100 px-4 py-2 rounded-lg text-sm font-medium transition duration-300 transform hover:scale-105 border border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-zinc-800">
+                                        Deletar
+                                    </button>
+                                </div>
+                            `;
+                            savedPasswordsList.appendChild(passwordCard);
+                        });
+
+                        // Adicionar listeners aos botões de copiar e deletar recém-criados
+                        document.querySelectorAll('.copy-button').forEach(button => {
+                            button.addEventListener('click', (e) => {
+                                copyToClipboard(e.target.dataset.password);
+                            });
+                        });
+                        document.querySelectorAll('.delete-button').forEach(button => {
+                            button.addEventListener('click', (e) => {
+                                handleDeletePassword(e.target.dataset.id);
+                            });
+                        });
+                    }
+                }, (error) => {
+                    console.error("Erro ao buscar senhas:", error);
+                    displayError("Erro ao carregar senhas. Tente novamente.");
+                });
+            }
+        });
     </script>
 </body>
 </html>
