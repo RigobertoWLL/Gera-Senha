@@ -226,10 +226,22 @@
             doc,
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Variáveis globais fornecidas pelo ambiente Canvas
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        // Variáveis de configuração do Firebase (obtidas do console do Firebase)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDW8RCP4ppqLXAZvY__8yyqLokzAX_OWQg",
+            authDomain: "casa-data-craft.firebaseapp.com",
+            databaseURL: "https://casa-data-craft-default-rtdb.firebaseio.com",
+            projectId: "casa-data-craft",
+            storageBucket: "casa-data-craft.firebasestorage.app",
+            messagingSenderId: "557386871802",
+            appId: "1:557386871802:web:69acf0f8be110b5e3e6a43",
+            measurementId: "G-H17YJLZ3VH"
+        };
+
+        // Use o appId do objeto de configuração do Firebase
+        const appId = firebaseConfig.appId;
+        // initialAuthToken não é usado em implantações normais, pode ser null
+        const initialAuthToken = null; 
 
         // O código único de registro (NÃO DEVE SER HARDCODED EM AMBIENTE DE PRODUÇÃO REAL!)
         const MASTER_REGISTRATION_CODE = "MEUSEGREDO123";
