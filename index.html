@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Senhas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Evita rolagem horizontal */
+        }
+        /* Estilos para rolagem personalizada (opcional, para um toque extra) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #27272a; /* zinc-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #8b5cf6; /* purple-500 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7c3aed; /* purple-600 */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-no-repeat bg-cover bg-center bg-fixed"
+    style="background-image: url('https://cdn.leonardo.ai/users/e3609aa1-c0b0-4673-9a6f-e2fda446f59e/generations/11dfada1-bcc2-4c3c-9231-ea78716f2af8/segments/2:4:1/Lucid_Realism_A_dimly_lit_interior_scene_with_a_predominantly__1.jpg');">
+
+    <div class="w-full max-w-4xl bg-zinc-950 bg-opacity-90 p-8 sm:p-12 rounded-3xl shadow-3xl border border-zinc-800 backdrop-blur-sm text-zinc-100">
+        <h1 class="text-5xl sm:text-6xl font-extrabold text-center mb-10 text-amber-300 drop-shadow-lg tracking-wider">
+            🔑 Gerenciador de Senhas
+        </h1>
+
+        <!-- Mensagens de Feedback -->
+        <div id="message-container" class="hidden bg-green-700 text-zinc-100 p-3 rounded-lg mb-4 text-center text-base border border-green-600 animate-pulse">
+            <!-- Mensagens de sucesso serão exibidas aqui -->
+        </div>
+        <div id="error-container" class="hidden bg-red-700 text-zinc-100 p-3 rounded-lg mb-4 text-center text-base border border-red-600 animate-pulse">
+            <!-- Mensagens de erro serão exibidas aqui -->
+        </div>
+
+        <!-- ID do Usuário (apenas para usuários logados) -->
+        <p id="user-id-display" class="hidden text-center text-sm text-zinc-500 mb-6">
+            ID do Usuário Atual: <span class="font-mono break-all text-zinc-400"></span>
+        </p>
+
+        <!-- Seção de Login -->
+        <div id="login-screen" class="screen-section bg-zinc-900 bg-opacity-90 p-8 sm:p-10 rounded-xl shadow-2xl w-full max-w-md mx-auto border border-zinc-700">
+            <h2 class="text-3xl font-extrabold mb-8 text-center text-red-400 drop-shadow-md">
+                Acesse sua Conta
+            </h2>
+            <form id="login-form" class="space-y-6">
+                <input
+                    type="text"
+                    id="login-username"
+                    placeholder="Seu Nome de Usuário"
+                    class="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-red-600 transition-all duration-300"
+                    required
+                />
+                <input
+                    type="password"
+                    id="login-password"
+                    placeholder="Sua Senha"
+                    class="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-red-600 transition-all duration-300"
+                    required
+                />
+                <div class="flex flex-col sm:flex-row gap-4 mt-6">
+                    <button
+                        type="submit"
+                        class="w-full bg-red-700 hover:bg-red-800 text-zinc-100 font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-xl border border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                    >
+                        Entrar
+                    </button>
+                    <button
+                        type="button"
+                        id="show-register-button"
+                        class="w-full bg-purple-700 hover:bg-purple-800 text-zinc-100 font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-xl border border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                    >
+                        Registrar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Seção de Registro -->
+        <div id="registration-screen" class="screen-section hidden bg-zinc-900 bg-opacity-90 p-8 sm:p-10 rounded-xl shadow-2xl w-full max-w-md mx-auto border border-zinc-700">
+            <h2 class="text-3xl font-extrabold mb-8 text-center text-purple-400 drop-shadow-md">
+                Criar Nova Conta
+            </h2>
+            <form id="register-form" class="space-y-6">
+                <input
+                    type="text"
+                    id="register-username"
+                    placeholder="Nome de Usuário"
+                    class="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300"
+                    required
+                />
+                <input
+                    type="password"
+                    id="register-password"
+                    placeholder="Senha"
+                    class="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300"
+                    required
+                />
+                <input
+                    type="text"
+                    id="registration-code"
+                    placeholder="Código de Registro Único"
+                    class="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300"
+                    required
+                />
+                <button
+                    type="submit"
+                    class="w-full bg-purple-700 hover:bg-purple-800 text-zinc-100 font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-xl border border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                >
+                    Registrar com Código
+                </button>
+            </form>
+            <button
+                type="button"
+                id="back-to-login-button"
+                class="mt-6 w-full bg-zinc-700 hover:bg-zinc-800 text-zinc-200 font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-md border border-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
+            >
+                Voltar ao Login
+            </button>
+        </div>
+
+        <!-- Seção do Dashboard (após login) -->
+        <div id="dashboard-screen" class="screen-section hidden space-y-10 w-full">
+            <!-- Gerador de Senhas -->
+            <div class="bg-zinc-900 bg-opacity-90 p-8 sm:p-10 rounded-xl shadow-2xl border border-zinc-700">
+                <h2 class="text-3xl font-extrabold mb-8 text-center text-purple-400 drop-shadow-md">
+                    Gerador de Senhas
+                </h2>
+                <div class="flex flex-col sm:flex-row items-center gap-4 mb-6">
+                    <input
+                        type="text"
+                        id="generated-password-display"
+                        readonly
+                        placeholder="Senha Gerada"
+                        class="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 text-center text-lg font-mono tracking-wide placeholder-zinc-400"
+                    />
+                    <button
+                        type="button"
+                        id="generate-password-button"
+                        class="w-full sm:w-auto bg-amber-700 hover:bg-amber-800 text-zinc-100 font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-xl flex-shrink-0 border border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                    >
+                        Gerar Nova Senha
+                    </button>
+                </div>
+                <form id="save-password-form" class="space-y-6 mt-6">
+                    <input
+                        type="text"
+                        id="login-website-input"
+                        placeholder="Login / Site (ex: google.com)"
+                        class="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300"
+                        required
+                    />
+                    <input
+                        type="text"
+                        id="password-to-save-input"
+                        placeholder="Senha a Salvar (pode ser a gerada)"
+                        class="w-full p-3 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all duration-300"
+                        required
+                    />
+                    <button
+                        type="submit"
+                        class="w-full bg-purple-700 hover:bg-purple-800 text-zinc-100 font-bold py-3 px-6 rounded-lg transition duration-300 transform hover:scale-105 shadow-xl border border-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                    >
+                        Salvar Senha
+                    </button>
+                </form>
+            </div>
+
+            <!-- Senhas Salvas -->
+            <div class="bg-zinc-900 bg-opacity-90 p-8 sm:p-10 rounded-xl shadow-2xl border border-zinc-700">
+                <h2 class="text-3xl font-extrabold mb-8 text-center text-red-400 drop-shadow-md">
+                    Suas Senhas Salvas (Compartilhadas)
+                </h2>
+                <div id="saved-passwords-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Senhas serão injetadas aqui via JavaScript -->
+                </div>
+                <p id="no-passwords-message" class="text-center text-zinc-400 text-lg mt-4 hidden">Nenhuma senha salva ainda. Comece a adicionar!</p>
+            </div>
+
+            <!-- Botão de Logout -->
+            <div class="text-center mt-8">
+                <button
+                    type="button"
+                    id="logout-button"
+                    class="bg-zinc-700 hover:bg-zinc-800 text-zinc-200 font-bold py-3 px-10 rounded-lg transition duration-300 transform hover:scale-105 shadow-xl border border-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
+                >
+                    Sair
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import {
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            query,
+            onSnapshot,
+            deleteDoc,
+            doc,
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Variáveis globais fornecidas pelo ambiente Canvas
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // O código único de registro (NÃO DEVE SER HARDCODED EM AMBIENTE DE PRODUÇÃO REAL!)
+        const MASTER_REGISTRATION_CODE = "MEUSEGREDO123";
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Referências aos elementos da UI
+        const loginScreen = document.getElementById('login-screen');
+        const registrationScreen = document.getElementById('registration-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const userIdDisplay = document.querySelector('#user-id-display span');
+        const messageContainer = document.getElementById('message-container');
+        const errorContainer = document.getElementById('error-container');
+
+        const loginForm = document.getElementById('login-form');
+        const loginUsernameInput = document.getElementById('login-username');
+        const loginPasswordInput = document.getElementById('login-password');
+        const showRegisterButton = document.getElementById('show-register-button');
+
+        const registerForm = document.getElementById('register-form');
+        const registerUsernameInput = document.getElementById('register-username');
+        const registerPasswordInput = document.getElementById('register-password');
+        const registrationCodeInput = document.getElementById('registration-code');
+        const backToLoginButton = document.getElementById('back-to-login-button');
+
+        const generatedPasswordDisplay = document.getElementById('generated-password-display');
+        const generatePasswordButton = document.getElementById('generate-password-button');
+        const savePasswordForm = document.getElementById('save-password-form');
+        const loginWebsiteInput = document.getElementById('login-website-input');
+        const passwordToSaveInput = document.getElementById('password-to-save-input');
+        const savedPasswordsList = document.getElementById('saved-passwords-list');
+        const noPasswordsMessage = document.getElementById('no-passwords-message');
+        const logoutButton = document.getElementById('logout-button');
+
+        let currentUser = null; // Para armazenar o usuário logado
+
+        // --- Funções de UI ---
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen-section').forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+            hideMessage(); // Limpa mensagens ao mudar de tela
+            hideError(); // Limpa erros ao mudar de tela
+        }
+
+        function displayMessage(text) {
+            messageContainer.textContent = text;
+            messageContainer.classList.remove('hidden');
+            errorContainer.classList.add('hidden'); // Oculta erro se houver mensagem
+        }
+
+        function hideMessage() {
+            messageContainer.classList.add('hidden');
+            messageContainer.textContent = '';
+        }
+
+        function displayError(text) {
+            errorContainer.textContent = text;
+            errorContainer.classList.remove('hidden');
+            messageContainer.classList.add('hidden'); // Oculta mensagem se houver erro
+        }
+
+        function hideError() {
+            errorContainer.classList.add('hidden');
+            errorContainer.textContent = '';
+        }
+
+        // --- Funções de Autenticação ---
+        onAuthStateChanged(auth, async (user) => {
+            if (initialAuthToken && !user) {
+                try {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("Usuário autenticado com token personalizado.");
+                } catch (error) {
+                    console.error("Erro ao autenticar com token personalizado:", error);
+                    await signInAnonymously(auth);
+                    console.log("Usuário autenticado anonimamente.");
+                }
+            } else if (!user) {
+                await signInAnonymously(auth);
+                console.log("Usuário autenticado anonimamente.");
+            }
+
+            currentUser = user; // Atualiza o usuário globalmente
+            if (currentUser) {
+                userIdDisplay.textContent = currentUser.uid || 'N/A';
+                document.getElementById('user-id-display').classList.remove('hidden');
+                showScreen('dashboard-screen');
+                setupFirestoreListener(); // Inicia listener do Firestore após o login
+            } else {
+                document.getElementById('user-id-display').classList.add('hidden');
+                showScreen('login-screen');
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            hideMessage();
+            const username = loginUsernameInput.value;
+            const password = loginPasswordInput.value;
+            const firebaseEmail = `${username}@passmanager.com`; // Formato de e-mail para Firebase Auth
+
+            try {
+                await signInWithEmailAndPassword(auth, firebaseEmail, password);
+                displayMessage("Login realizado com sucesso!");
+                loginUsernameInput.value = ''; // Limpa campos
+                loginPasswordInput.value = '';
+            } catch (error) {
+                console.error("Erro ao fazer login:", error.message);
+                displayError("Falha na autenticação: Credenciais incorretas.");
+            }
+        });
+
+        showRegisterButton.addEventListener('click', () => {
+            showScreen('registration-screen');
+            loginUsernameInput.value = ''; // Limpa campos de login ao ir para o registro
+            loginPasswordInput.value = '';
+        });
+
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            hideMessage();
+            const username = registerUsernameInput.value;
+            const password = registerPasswordInput.value;
+            const registrationCode = registrationCodeInput.value;
+
+            if (registrationCode !== MASTER_REGISTRATION_CODE) {
+                displayError("Código de registro inválido.");
+                return;
+            }
+
+            const firebaseEmail = `${username}@passmanager.com`; // Formato de e-mail para Firebase Auth
+
+            try {
+                await createUserWithEmailAndPassword(auth, firebaseEmail, password);
+                displayMessage("Conta criada com sucesso! Você está logado.");
+                registerUsernameInput.value = ''; // Limpa campos
+                registerPasswordInput.value = '';
+                registrationCodeInput.value = '';
+                showScreen('login-screen'); // Volta para login após registro
+            } catch (error) {
+                console.error("Erro ao criar conta:", error.message);
+                displayError("Erro ao criar conta: " + error.message);
+            }
+        });
+
+        backToLoginButton.addEventListener('click', () => {
+            showScreen('login-screen');
+            registerUsernameInput.value = ''; // Limpa campos de registro ao voltar
+            registerPasswordInput.value = '';
+            registrationCodeInput.value = '';
+        });
+
+        logoutButton.addEventListener('click', async () => {
+            hideError();
+            hideMessage();
+            try {
+                await signOut(auth);
+                displayMessage("Logout realizado.");
+            } catch (error) {
+                console.error("Erro ao fazer logout:", error.message);
+                displayError("Erro ao sair. Tente novamente.");
+            }
+        });
+
+        // --- Funções do Gerenciador de Senhas ---
+
+        // Função para gerar uma senha segura (a mesma lógica do React)
+        const generatePassword = (length = 20) => {
+            const characters =
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                "abcdefghijklmnopqrstuvwxyz" +
+                "0123456789" +
+                "@#$^*()-_=+[]{}.<>/?|~";
+            let password = "";
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * characters.length);
+                password += characters[randomIndex];
+            }
+            return password;
+        };
+
+        generatePasswordButton.addEventListener('click', () => {
+            const newPassword = generatePassword();
+            generatedPasswordDisplay.value = newPassword;
+            passwordToSaveInput.value = newPassword; // Preenche o campo de salvar automaticamente
+            displayMessage("Senha gerada!");
+        });
+
+        savePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            hideMessage();
+            const loginWebsite = loginWebsiteInput.value;
+            const password = passwordToSaveInput.value;
+
+            if (!currentUser) {
+                displayError("Usuário não autenticado. Por favor, faça login.");
+                return;
+            }
+            if (!loginWebsite || !password) {
+                displayError("Por favor, preencha o login/site e a senha.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, `artifacts/${appId}/public/data/sharedPasswords`), {
+                    loginWebsite: loginWebsite,
+                    password: password,
+                    createdAt: new Date(),
+                    savedBy: currentUser.uid,
+                });
+                displayMessage("Senha salva com sucesso!");
+                loginWebsiteInput.value = '';
+                passwordToSaveInput.value = '';
+                generatedPasswordDisplay.value = ''; // Limpa o display da senha gerada
+            } catch (error) {
+                console.error("Erro ao salvar senha:", error);
+                displayError("Erro ao salvar senha. Tente novamente.");
+            }
+        });
+
+        async function handleDeletePassword(id) {
+            hideError();
+            hideMessage();
+            if (!currentUser) {
+                displayError("Usuário não autenticado.");
+                return;
+            }
+            try {
+                await deleteDoc(doc(db, `artifacts/${appId}/public/data/sharedPasswords`, id));
+                displayMessage("Senha deletada com sucesso!");
+            } catch (error) {
+                console.error("Erro ao deletar senha:", error);
+                displayError("Erro ao deletar senha. Tente novamente.");
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                displayMessage('Senha copiada para a área de transferência!');
+            }).catch(err => {
+                console.error('Falha ao copiar:', err);
+                displayError('Não foi possível copiar a senha.');
+            });
+        }
+
+        // Listener do Firestore para exibir senhas
+        function setupFirestoreListener() {
+            if (!currentUser) return; // Garante que há um usuário logado
+
+            const passwordsCollectionRef = collection(db, `artifacts/${appId}/public/data/sharedPasswords`);
+            const q = query(passwordsCollectionRef);
+
+            onSnapshot(q, (snapshot) => {
+                savedPasswordsList.innerHTML = ''; // Limpa a lista antes de renderizar
+                const passwordsData = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                if (passwordsData.length === 0) {
+                    noPasswordsMessage.classList.remove('hidden');
+                } else {
+                    noPasswordsMessage.classList.add('hidden');
+                    passwordsData.forEach(item => {
+                        const passwordCard = document.createElement('div');
+                        passwordCard.className = 'bg-zinc-800 p-5 rounded-lg border border-zinc-700 flex flex-col justify-between shadow-lg hover:shadow-xl transition-shadow duration-200';
+                        passwordCard.innerHTML = `
+                            <div>
+                                <p class="text-zinc-400 text-sm mb-1">Login/Site:</p>
+                                <p class="text-xl font-semibold text-zinc-100 break-all mb-3">${item.loginWebsite}</p>
+                                <p class="text-zinc-400 text-sm mb-1">Senha:</p>
+                                <p class="text-2xl font-mono text-green-300 break-all mb-4">${item.password}</p>
+                                ${item.savedBy ? `<p class="text-zinc-500 text-xs italic mt-2">Salva por: <span class="font-mono break-all">${item.savedBy}</span></p>` : ''}
+                            </div>
+                            <div class="flex justify-end gap-3 mt-4">
+                                <button data-id="${item.id}" data-password="${item.password}" class="copy-button bg-cyan-700 hover:bg-cyan-800 text-zinc-100 px-4 py-2 rounded-lg text-sm font-medium transition duration-300 transform hover:scale-105 border border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:ring-offset-2 focus:ring-offset-zinc-800">
+                                    Copiar
+                                </button>
+                                <button data-id="${item.id}" class="delete-button bg-red-700 hover:bg-red-800 text-zinc-100 px-4 py-2 rounded-lg text-sm font-medium transition duration-300 transform hover:scale-105 border border-red-600 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-zinc-800">
+                                    Deletar
+                                </button>
+                            </div>
+                        `;
+                        savedPasswordsList.appendChild(passwordCard);
+                    });
+
+                    // Adicionar listeners aos botões de copiar e deletar recém-criados
+                    document.querySelectorAll('.copy-button').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            copyToClipboard(e.target.dataset.password);
+                        });
+                    });
+                    document.querySelectorAll('.delete-button').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            handleDeletePassword(e.target.dataset.id);
+                        });
+                    });
+                }
+            }, (error) => {
+                console.error("Erro ao buscar senhas:", error);
+                displayError("Erro ao carregar senhas. Tente novamente.");
+            });
+        }
+    </script>
+</body>
+</html>
